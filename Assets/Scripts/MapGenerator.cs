@@ -11,7 +11,7 @@ public class MapGenerator : MonoBehaviour {
 
     public DrawMode drawMode;
 
-    const int chunkSize = 241;
+    public const int chunkSize = 241;
     [Range(0, 6)]
     public int levelOfDetail;
     public float noiseScale;
@@ -39,7 +39,7 @@ public class MapGenerator : MonoBehaviour {
             for (int x = 0; x < chunkSize; x++) {
                 float currentHeight = noiseMap[x, y];
                 for (int i = 0; i < regions.Length; i++) {
-                    if (currentHeight <= regions[i].height) {
+                    if (heightCurve.Evaluate(currentHeight) <= regions[i].height) {
                         colorMap[x + y * chunkSize] = regions[i].color;
                         break;
                     }
