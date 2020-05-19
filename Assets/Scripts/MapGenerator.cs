@@ -6,7 +6,7 @@ using UnityEngine;
 public class MapGenerator : MonoBehaviour {
     
     public enum DrawMode {
-        NoiseMap, ColorMap
+        NoiseMap, ColorMap, Mesh
     }
 
     public DrawMode drawMode;
@@ -45,13 +45,12 @@ public class MapGenerator : MonoBehaviour {
         }
 
         MapDisplay mapDisplay = GetComponent<MapDisplay>();
-        Texture2D texture;
         if (drawMode == DrawMode.NoiseMap)
-            texture = TextureGenerator.TextureFromHeightMap(noiseMap);
-        else
-            texture = TextureGenerator.TextureFromColorMap(colorMap, mapWidth, mapHeight);
-        
-        mapDisplay.DrawTexture(texture);
+            mapDisplay.DrawTexture(TextureGenerator.TextureFromHeightMap(noiseMap));
+        else if (drawMode == DrawMode.ColorMap)
+            mapDisplay.DrawTexture(TextureGenerator.TextureFromColorMap(colorMap, mapWidth, mapHeight));
+        else if (drawMode == DrawMode.Mesh)
+            mapDisplay.DrawMesh(MeshGenerator.GenerateTerrainMesh(noiseMap), TextureGenerator.TextureFromColorMap(colorMap, mapWidth, mapHeight));
     }
 
     void OnValidate() {
