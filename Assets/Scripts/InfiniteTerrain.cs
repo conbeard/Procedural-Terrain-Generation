@@ -6,6 +6,8 @@ using UnityEngine.PlayerLoop;
 
 public class InfiniteTerrain : MonoBehaviour {
 
+    const float scale = 1f;
+
     const float moveForUpdateThreshold = 25f * 25f;
     
     public LODInfo[] detailLevels;
@@ -21,11 +23,11 @@ public class InfiniteTerrain : MonoBehaviour {
     int chunksInViewDistance;
 
     Dictionary<Vector2, TerrainChunk> _chunks = new Dictionary<Vector2, TerrainChunk>();
-    List<TerrainChunk> _chunksVisibleLastUpdate = new List<TerrainChunk>();
+    static List<TerrainChunk> _chunksVisibleLastUpdate = new List<TerrainChunk>();
 
     void Start() {
         _mapGenerator = GetComponent<MapGenerator>();
-        Debug.Log(_mapGenerator.lacunarity);
+        _mapGenerator.normalizeMode = Noise.NormalizeMode.Global;
 
         maxViewDistance = detailLevels[detailLevels.Length - 1].visibleDistance;
         chunkSize = MapGenerator.chunkSize - 1;
@@ -35,7 +37,7 @@ public class InfiniteTerrain : MonoBehaviour {
     }
 
     void Update() {
-        Vector3 position = viewer.position;
+        Vector3 position = viewer.position / scale;
         viewerPos = new Vector2(position.x, position.z);
         if ((viewerPos - prevViewerPos).sqrMagnitude > moveForUpdateThreshold) {
             UpdateVisibleChunks();
@@ -62,10 +64,6 @@ public class InfiniteTerrain : MonoBehaviour {
                     _chunks[viewChunkCoord] = new TerrainChunk(viewChunkCoord, chunkSize, detailLevels, transform, material);
                 } else {
                     _chunks[viewChunkCoord].UpdateTerrainChunk();
-                }
-                
-                if (_chunks[viewChunkCoord].IsVisible()) {
-                    _chunksVisibleLastUpdate.Add(_chunks[viewChunkCoord]);
                 }
             }
         }
@@ -98,8 +96,9 @@ public class InfiniteTerrain : MonoBehaviour {
             _meshFilter = meshObject.AddComponent<MeshFilter>();
             _meshRenderer.material = material;
             
-            meshObject.transform.position = position3;
+            meshObject.transform.position = position3 * scale;
             meshObject.transform.parent = parent;
+            meshObject.transform.localScale = Vector3.one * scale;
             SetVisible(false);
             
             _detailMeshes = new LODMesh[_detailLevels.Length];
@@ -148,6 +147,8 @@ public class InfiniteTerrain : MonoBehaviour {
                         lodMesh.RequestMesh(_mapData);
                     }
                 }
+                
+                _chunksVisibleLastUpdate.Add(this);
             }
             
             SetVisible(visible);
