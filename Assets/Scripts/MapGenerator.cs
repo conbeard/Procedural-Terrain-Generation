@@ -8,7 +8,7 @@ using UnityEngine.PlayerLoop;
 public class MapGenerator : MonoBehaviour {
     
     public enum DrawMode {
-        NoiseMap, ColorMap, Mesh
+        NoiseMap, ColorMap, Mesh, FalloffMap
     }
 
     public DrawMode drawMode;
@@ -29,12 +29,20 @@ public class MapGenerator : MonoBehaviour {
     public int seed;
     public Vector2 offset;
 
+    public bool useFalloff;
+
     public bool autoUpdate = true;
 
     public TerrainType[] regions;
+
+    float[,] falloffMap;
     
     Queue<MapThreadInfo<MapData>> _mapDataQueue = new Queue<MapThreadInfo<MapData>>();
     Queue<MapThreadInfo<MeshData>> _meshDataQueue = new Queue<MapThreadInfo<MeshData>>();
+
+    void Awake() {
+        falloffMap = FalloffGenerator.GenerateFalloffMap(chunkSize);
+    }
 
     public void DrawMapInEditor() {
         MapData mapData = GenerateMapData(Vector2.zero);
@@ -48,6 +56,8 @@ public class MapGenerator : MonoBehaviour {
                 MeshGenerator.GenerateTerrainMesh(mapData.HeightMap, heightMultiplier, heightCurve, editorLOD),
                 TextureGenerator.TextureFromColorMap(mapData.ColorMap, chunkSize, chunkSize)
             );
+        else if (drawMode == DrawMode.FalloffMap)
+            mapDisplay.DrawTexture(TextureGenerator.TextureFromHeightMap(FalloffGenerator.GenerateFalloffMap(chunkSize)));
     }
 
     public void RequestMapData(Vector2 center, Action<MapData> callback) {
@@ -107,10 +117,12 @@ public class MapGenerator : MonoBehaviour {
         Color[] colorMap = new Color[chunkSize * chunkSize];
         for (int y = 0; y < chunkSize; y++) {
             for (int x = 0; x < chunkSize; x++) {
-                float currentHeight = noiseMap[x, y];
+                if (useFalloff)
+                    noiseMap[x, y] = Mathf.Clamp01(noiseMap[x, y] - falloffMap[x, y]);
+                
                 for (int i = 0; i < regions.Length; i++) {
                     lock (heightCurve) {
-                        if (heightCurve.Evaluate(currentHeight) >= regions[i].height) {
+                        if (heightCurve.Evaluate(noiseMap[x, y]) >= regions[i].height) {
                             colorMap[x + y * chunkSize] = regions[i].color;
                         } else {
                             break;
@@ -126,6 +138,8 @@ public class MapGenerator : MonoBehaviour {
     void OnValidate() {
         if (lacunarity < 1) lacunarity = 1;
         if (octaves < 0) octaves = 0;
+        
+        falloffMap = FalloffGenerator.GenerateFalloffMap(chunkSize);
     }
 
     struct MapThreadInfo<T> {
