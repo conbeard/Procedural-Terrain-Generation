@@ -77,6 +77,8 @@ public class InfiniteTerrain : MonoBehaviour {
         
         LODInfo[] _detailLevels;
         LODMesh[] _detailMeshes;
+        LODMesh _collisionMesh;
+        
         int _prevLODIndex = -1;
 
         MapData _mapData;
@@ -84,6 +86,7 @@ public class InfiniteTerrain : MonoBehaviour {
 
         MeshRenderer _meshRenderer;
         MeshFilter _meshFilter;
+        MeshCollider _meshCollider;
         
         public TerrainChunk(Vector2 coord, int size, LODInfo[] detailLevels, Transform parent, Material material) {
             _detailLevels = detailLevels;
@@ -94,6 +97,7 @@ public class InfiniteTerrain : MonoBehaviour {
             meshObject = new GameObject("Terrain Chunk");
             _meshRenderer = meshObject.AddComponent<MeshRenderer>();
             _meshFilter = meshObject.AddComponent<MeshFilter>();
+            _meshCollider = meshObject.AddComponent<MeshCollider>();
             _meshRenderer.material = material;
             
             meshObject.transform.position = position3 * scale;
@@ -104,6 +108,8 @@ public class InfiniteTerrain : MonoBehaviour {
             _detailMeshes = new LODMesh[_detailLevels.Length];
             for (int i = 0; i < _detailMeshes.Length; i++) {
                 _detailMeshes[i] = new LODMesh(_detailLevels[i].lod, UpdateTerrainChunk);
+                if (_detailLevels[i].useForCollider)
+                    _collisionMesh = _detailMeshes[i];
             }
             
             _mapGenerator.RequestMapData(position, OnMapDataReceived);
@@ -147,7 +153,14 @@ public class InfiniteTerrain : MonoBehaviour {
                         lodMesh.RequestMesh(_mapData);
                     }
                 }
-                
+
+                if (lodIndex == 0) {
+                    if (_collisionMesh.hasMesh)
+                        _meshCollider.sharedMesh = _collisionMesh.mesh;
+                    else if (!_collisionMesh.hasRequestedMesh)
+                        _collisionMesh.RequestMesh(_mapData);
+                }
+
                 _chunksVisibleLastUpdate.Add(this);
             }
             
@@ -194,5 +207,6 @@ public class InfiniteTerrain : MonoBehaviour {
     public struct LODInfo {
         public int lod;
         public float visibleDistance;
+        public bool useForCollider;
     }
 }
