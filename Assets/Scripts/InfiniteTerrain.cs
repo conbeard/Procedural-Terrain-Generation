@@ -6,7 +6,6 @@ using UnityEngine.PlayerLoop;
 
 public class InfiniteTerrain : MonoBehaviour {
 
-    const float scale = 1f;
 
     const float moveForUpdateThreshold = 25f * 25f;
     
@@ -27,17 +26,17 @@ public class InfiniteTerrain : MonoBehaviour {
 
     void Start() {
         _mapGenerator = GetComponent<MapGenerator>();
-        _mapGenerator.normalizeMode = Noise.NormalizeMode.Global;
+        _mapGenerator.noiseData.normalizeMode = Noise.NormalizeMode.Global;
 
         maxViewDistance = detailLevels[detailLevels.Length - 1].visibleDistance;
-        chunkSize = MapGenerator.chunkSize - 1;
+        chunkSize = _mapGenerator.chunkSize - 1;
         chunksInViewDistance = Mathf.CeilToInt(maxViewDistance / chunkSize);
         
         UpdateVisibleChunks();
     }
 
     void Update() {
-        Vector3 position = viewer.position / scale;
+        Vector3 position = viewer.position / _mapGenerator.terrainData.scale;
         viewerPos = new Vector2(position.x, position.z);
         if ((viewerPos - prevViewerPos).sqrMagnitude > moveForUpdateThreshold) {
             UpdateVisibleChunks();
@@ -100,9 +99,9 @@ public class InfiniteTerrain : MonoBehaviour {
             _meshCollider = meshObject.AddComponent<MeshCollider>();
             _meshRenderer.material = material;
             
-            meshObject.transform.position = position3 * scale;
+            meshObject.transform.position = position3 * _mapGenerator.terrainData.scale;
             meshObject.transform.parent = parent;
-            meshObject.transform.localScale = Vector3.one * scale;
+            meshObject.transform.localScale = Vector3.one * _mapGenerator.terrainData.scale;
             SetVisible(false);
             
             _detailMeshes = new LODMesh[_detailLevels.Length];
@@ -118,13 +117,6 @@ public class InfiniteTerrain : MonoBehaviour {
         void OnMapDataReceived(MapData mapData) {
             _mapData = mapData;
             _mapDataReceived = true;
-
-            Texture2D texture = TextureGenerator.TextureFromColorMap(
-                mapData.ColorMap, MapGenerator.chunkSize, MapGenerator.chunkSize
-            );
-
-            _meshRenderer.material.mainTexture = texture;
-            
             UpdateTerrainChunk();
         }
 
