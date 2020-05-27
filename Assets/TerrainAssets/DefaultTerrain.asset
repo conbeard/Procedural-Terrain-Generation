@@ -47,6 +47,6 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  useFalloff: 1
+  useFalloff: 0
   useFlatShading: 0
   scale: 2.5

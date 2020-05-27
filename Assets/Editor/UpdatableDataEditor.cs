@@ -13,6 +13,7 @@ public class NewBehaviourScript : UnityEditor.Editor {
 
         if (GUILayout.Button("Update")) {
             updatableData.NotifyUpdatedValues();
+            EditorUtility.SetDirty(target);
         }
     }
 }
