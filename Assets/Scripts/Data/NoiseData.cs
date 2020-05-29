@@ -18,10 +18,15 @@ public class NoiseData : UpdatableData {
 
     public Noise.NormalizeMode normalizeMode;
 
+    
+#if UNITY_EDITOR
+
     void OnValidate() {
         if (lacunarity < 1) lacunarity = 1;
         if (octaves < 0) octaves = 0;
 
         base.OnValidate();
     }
+#endif
+    
 }
